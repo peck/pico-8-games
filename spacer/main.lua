@@ -12,6 +12,8 @@ function _init()
     states={play="play",gameover_loser="gameover_loser",gameover_winner="gameover_winner",start="start"}
     star_count=200
     state=states.start
+    monster_primary_color={[1]=8,[2]=14,[3]=5}
+    music(0)
     reset()
 end
 
@@ -48,7 +50,7 @@ function _update()
             end
         end
         --allow for moving and firing at same time
-        if btn(4) then
+        if btn(5) then
             add_bullet()
         end
 
@@ -64,6 +66,7 @@ function _update()
         end
     elseif state == states.gameover_winner or state == states.gameover_loser then
         update_stars()
+        update_ship_particles()
         if btn(5) then
             reset()
             state = states.play
@@ -72,6 +75,7 @@ function _update()
 
     elseif state == states.start then
         update_stars()
+        update_ship_particles()
         if btn(5) then
             reset()
             state = states.play
@@ -113,7 +117,6 @@ function _draw()
         end
         draw_bullets()
         draw_bombs()
-        draw_ship_particles()
 
     elseif state == states.gameover_loser then
         print("a loser is you", 38, 64, 8)
@@ -124,9 +127,11 @@ function _draw()
         print("press x to restart", 34, 72, 8)
 
     elseif state == states.start then
+        spr(36, 12, 40, 12, 12)
         print("press x to start", 34, 64, 8)
 
     end
+        draw_ship_particles()
 end
 
 function draw_bullets()
@@ -164,7 +169,7 @@ function draw_stars()
         if s.yspeed <0.7 then
             pset(s.x, s.y, 1)
         else
-            pset(s.x, s.y, 6)
+            pset(s.x, s.y, -4)
         end
     end
 end
@@ -172,7 +177,7 @@ end
 function add_bullet()
     if #bullets < max_bullets and tick-last_shot >= shot_delay then
         --y is the max minus sprite height
-        local b={x=ship.x+ship_gun_offset, y=127-8, sprite=16, h=4, w=4}
+        local b={x=ship.x+ship.w/2, y=127-8, sprite=16, h=4, w=4}
         last_shot=tick
         add(bullets, b)
         sfx(1)
@@ -201,6 +206,11 @@ end
 
 function hit_ship()
     state = states.gameover_loser
+    for i=0,100 do
+        particle={x=ship.x+ship.w/2, y=ship.y+ship.h/2, color=7, ttl=10, xspeed=rand_range(5), yspeed=rand_range(5)}
+        add(ship_particles,particle)
+    end
+    sfx(6)
 end
 
 function update_stars()
@@ -258,6 +268,10 @@ end
 
 function destroy_monster(m)
     del(monsters, m)
+    for i=0,100 do
+        particle={x=m.x+m.w/2, y=m.y+m.h/2, color=monster_primary_color[m.sprite], ttl=5, xspeed=rand_range(5), yspeed=rand_range(5)}
+        add(ship_particles,particle)
+    end
     sfx(0)
 end
 
@@ -281,7 +295,7 @@ function populate_monsters(n_rows, y_cols, start_y, spacing_x, spacing_y)
             local y = start_y + row * spacing_y
             
             local time_to_shoot = flr(rnd(60)+30)
-            add(monsters, {x=x, y=y, sprite=1, xspeed=1, yspeed=0, direction=row_direction, tts=time_to_shoot, h=8, w=8})
+            add(monsters, {x=x, y=y, sprite=rnd({1,2,3}), xspeed=1, yspeed=0, direction=row_direction, tts=time_to_shoot, h=8, w=8})
         end
     end
 end
